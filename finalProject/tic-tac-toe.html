@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive; /* Retro-style font */
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-top: 20px;
+        }
+
+        #ticTacToeCanvas {
+            border: 4px solid #fff; /* Border color */
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .message {
+            font-size: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Retro Tic Tac Toe</h1>
+    <canvas id="ticTacToeCanvas" width="300" height="300"></canvas>
+    <div class="message" id="message"></div>
+    <script>
+        // Get canvas and context
+        const canvas = document.getElementById('ticTacToeCanvas');
+        const context = canvas.getContext('2d');
+
+        // Constants
+        const cellSize = 100; // Size of each cell in pixels
+        const gridSize = 3; // Size of the grid (3x3)
+        const playerX = 'X'; // Symbol for Player X
+        const playerO = 'O'; // Symbol for Player O
+        let currentPlayer = playerX; // Current player (starts with X)
+        let board = [
+            ['', '', ''],
+            ['', '', ''],
+            ['', '', '']
+        ]; // Game board state
+
+        // Variable to store winning coordinates
+        let winningCoordinates = null;
+
+        // Function to draw the game grid
+        function drawGrid() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = "#000"; // Background color
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.strokeStyle = "#fff"; // Line color
+            context.lineWidth = 4; // Line width
+            for (let i = 1; i < gridSize; i++) {
+                context.moveTo(i * cellSize, 0);
+                context.lineTo(i * cellSize, canvas.height);
+                context.moveTo(0, i * cellSize);
+                context.lineTo(canvas.width, i * cellSize);
+            }
+            context.stroke();
+        }
+
+        // Function to draw X symbol
+        function drawX(x, y) {
+            context.strokeStyle = "#fff"; // Line color
+            context.lineWidth = 4; // Line width
+            context.beginPath();
+            context.moveTo(x + 20, y + 20);
+            context.lineTo(x + cellSize - 20, y + cellSize - 20);
+            context.moveTo(x + cellSize - 20, y + 20);
+            context.lineTo(x + 20, y + cellSize - 20);
+            context.stroke();
+        }
+
+        // Function to draw O symbol
+        function drawO(x, y) {
+            context.strokeStyle = "#fff"; // Line color
+            context.lineWidth = 4; // Line width
+            context.beginPath();
+            context.arc(x + cellSize / 2, y + cellSize / 2, (cellSize - 40) / 2, 0, Math.PI * 2);
+            context.stroke();
+        }
+
+        // Function to mark a cell with the current player's symbol
+        function markCell(row, col) {
+            const x = col * cellSize;
+            const y = row * cellSize;
+            if (currentPlayer === playerX) {
+                drawX(x, y);
+                board[row][col] = playerX;
+                currentPlayer = playerO;
+            } else {
+                drawO(x, y);
+                board[row][col] = playerO;
+                currentPlayer = playerX;
+            }
+        }
+
+        // Function to check if there's a winner or a tie
+        function checkWinner() {
+            // Check rows
+            for (let i = 0; i < gridSize; i++) {
+                if (board[i][0] !== '' && board[i][0] === board[i][1] && board[i][1] === board[i][2]) {
+                    winningCoordinates = [{ row: i, col: 0 }, { row: i, col: 1 }, { row: i, col: 2 }];
+                    return board[i][0];
+                }
+            }
+            // Check columns
+            for (let i = 0; i < gridSize; i++) {
+                if (board[0][i] !== '' && board[0][i] === board[1][i] && board[1][i] === board[2][i]) {
+                    winningCoordinates = [{ row: 0, col: i }, { row: 1, col: i }, { row: 2, col: i }];
+                    return board[0][i];
+                }
+            }
+            // Check diagonals
+            if (board[0][0] !== '' && board[0][0] === board[1][1] && board[1][1] === board[2][2]) {
+                winningCoordinates = [{ row: 0, col: 0 }, { row: 1, col: 1 }, { row: 2, col: 2 }];
+                return board[0][0];
+            }
+            if (board[0][2] !== '' && board[0][2] === board[1][1] && board[1][1] === board[2][0]) {
+                winningCoordinates = [{ row: 0, col: 2 }, { row: 1, col: 1 }, { row: 2, col: 0 }];
+                return board[0][2];
+            }
+            // Check for tie
+            if (!board.flat().includes('')) {
+                return 'tie';
+            }
+            return null;
+        }
+
+        // Function to draw winning symbol temporarily
+        function drawWinningSymbol() {
+            if (winningCoordinates) {
+                const { row, col } = winningCoordinates[0];
+                const x = col * cellSize;
+                const y = row * cellSize;
+                const symbol = board[row][col];
+                if (symbol === playerX) {
+                    drawX(x, y);
+                } else if (symbol === playerO) {
+                    drawO(x, y);
+                }
+            }
+        }
+
+        // Function to handle click events on the canvas
+        function handleClick(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const row = Math.floor(y / cellSize);
+            const col = Math.floor(x / cellSize);
+            if (board[row][col] === '') {
+                markCell(row, col);
+                const winner = checkWinner();
+                if (winner) {
+                    if (winner === 'tie') {
+                        setMessage("It's a tie!");
+                    } else {
+                        setMessage(`Player ${winner} wins!`);
+                    }
+                    setTimeout(resetGame, 2000);
+                }
+            }
+        }
+
+        // Function to reset the game
+        function resetGame() {
+            drawGrid();
+            setMessage("");
+            board = [
+                ['', '', ''],
+                ['', '', ''],
+                ['', '', '']
+            ];
+            currentPlayer = playerX;
+            winningCoordinates = null; // Reset winning coordinates
+        }
+
+        // Function to set the message
+        function setMessage(message) {
+            const messageElement = document.getElementById("message");
+            messageElement.innerText = message;
+        }
+
+        // Event listener for click events on the canvas
+        canvas.addEventListener('click', handleClick);
+        // Initial draw of the grid
+        drawGrid();
+    </script>
+    <!-- Importing the Press Start 2P font -->
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap" rel="stylesheet">
+</body>
+</html>
